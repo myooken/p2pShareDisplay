@@ -22,8 +22,6 @@ function Home() {
 
     return (
         <div className="home">
-            <h1>P2P Screen Share</h1>
-
             <div className="card-container" style={{ display: 'flex', gap: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                 <div className="card">
                     <h2><Monitor size={24} style={{ verticalAlign: 'middle' }} /> Create Room</h2>

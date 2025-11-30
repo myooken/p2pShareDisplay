@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import Peer from 'peerjs';
-import { Share, Copy, Check, Play, Terminal } from 'lucide-react';
+import { Share, Copy, Check, Play, Terminal, Eye, MousePointer2 } from 'lucide-react';
 
 const peerCache = new Map();
 
@@ -11,7 +11,7 @@ function Room() {
     const [isHost, setIsHost] = useState(null);
     const [status, setStatus] = useState('Initializing...');
     const [stream, setStream] = useState(null);
-    const [remoteCursor, setRemoteCursor] = useState({ x: 0, y: 0, visible: false });
+    const [remoteCursor, setRemoteCursor] = useState({ x: 0, y: 0, visible: false, color: '#ef4444' });
     const [copied, setCopied] = useState(false);
     const [logs, setLogs] = useState([]);
     const [showLogs, setShowLogs] = useState(false);
@@ -21,6 +21,11 @@ function Room() {
     const [isAuthenticated, setIsAuthenticated] = useState(false); // For Guest: true if auth success
     const [showAuthModal, setShowAuthModal] = useState(false); // For Guest: if password needed
     const [authInput, setAuthInput] = useState('');
+
+    // Cursor Settings (Guest Side)
+    const [cursorMode, setCursorMode] = useState('always'); // 'always' | 'click'
+    const [cursorColor, setCursorColor] = useState('#ef4444');
+    const [isMouseDown, setIsMouseDown] = useState(false);
 
     const videoRef = useRef(null);
     const connRef = useRef(null);
@@ -79,37 +84,43 @@ function Room() {
             addLog(`Received connection from: ${conn.peer}`);
             connRef.current = conn;
 
+            const handleData = (data) => {
+                if (data.type === 'auth') {
+                    if (data.password === password) {
+                        addLog('Password verified. Access granted.');
+                        conn.send({ type: 'auth-success' });
+                        setStatus('Guest connected');
+                        if (streamRef.current) {
+                            callGuest(peer, conn.peer, streamRef.current);
+                        }
+                    } else {
+                        addLog('Invalid password attempt.', 'error');
+                        conn.send({ type: 'auth-fail' });
+                        setTimeout(() => conn.close(), 500);
+                    }
+                } else if (data.type === 'cursor') {
+                    setRemoteCursor({ x: data.x, y: data.y, visible: data.visible, color: data.color || '#ef4444' });
+                }
+            };
+
             // If we have a password, we wait for auth
             if (password) {
                 setStatus('Guest connecting (verifying password)...');
-                conn.on('data', (data) => {
-                    if (data.type === 'auth') {
-                        if (data.password === password) {
-                            addLog('Password verified. Access granted.');
-                            conn.send({ type: 'auth-success' });
-                            setStatus('Guest connected');
-                            setupDataConnection(conn);
-                            if (streamRef.current) {
-                                callGuest(peer, conn.peer, streamRef.current);
-                            }
-                        } else {
-                            addLog('Invalid password attempt.', 'error');
-                            conn.send({ type: 'auth-fail' });
-                            setTimeout(() => conn.close(), 500);
-                        }
-                    } else if (data.type === 'cursor') {
-                        // Allow cursor if already authenticated (handled in setupDataConnection)
-                    }
-                });
+                conn.on('data', handleData);
             } else {
                 // No password, allow immediately
                 conn.on('open', () => {
                     setStatus('Guest connected');
-                    setupDataConnection(conn);
                     conn.send({ type: 'auth-success' });
                     if (streamRef.current) {
                         callGuest(peer, conn.peer, streamRef.current);
                     }
+                    // Also listen for cursor data here
+                    conn.on('data', (data) => {
+                        if (data.type === 'cursor') {
+                            setRemoteCursor({ x: data.x, y: data.y, visible: data.visible, color: data.color || '#ef4444' });
+                        }
+                    });
                 });
             }
         };
@@ -183,7 +194,6 @@ function Room() {
                     addLog('Authentication successful');
                     setIsAuthenticated(true);
                     setStatus('Connected to Host');
-                    setupDataConnection(conn);
                     setShowAuthModal(false);
                 } else if (data.type === 'auth-fail') {
                     addLog('Authentication failed', 'error');
@@ -191,8 +201,6 @@ function Room() {
                     setIsAuthenticated(false);
                     setShowAuthModal(true); // Show modal to retry
                     conn.close();
-                } else if (data.type === 'cursor') {
-                    setRemoteCursor({ x: data.x, y: data.y, visible: true });
                 }
             });
 
@@ -202,7 +210,6 @@ function Room() {
                 } else {
                     setStatus('Connection closed');
                 }
-                setRemoteCursor(prev => ({ ...prev, visible: false }));
                 connRef.current = null;
             });
 
@@ -236,12 +243,6 @@ function Room() {
             peerRef.current.destroy();
         }
         setTimeout(initializeGuest, 500);
-    };
-
-    const setupDataConnection = (conn) => {
-        // Only handle cursor if authenticated (or no password needed)
-        // Logic moved to 'data' handler in initializeGuest for Guest
-        // For Host, it's in handleConnection
     };
 
     const callGuest = (peer, guestId, stream) => {
@@ -286,7 +287,7 @@ function Room() {
         if (videoRef.current) videoRef.current.srcObject = null;
     };
 
-    const handleMouseMove = (e) => {
+    const sendCursor = (e, visible) => {
         if (isHost) return;
         if (!connRef.current) return;
 
@@ -294,12 +295,36 @@ function Room() {
         const x = (e.clientX - rect.left) / rect.width;
         const y = (e.clientY - rect.top) / rect.height;
 
-        connRef.current.send({ type: 'cursor', x, y });
+        connRef.current.send({ type: 'cursor', x, y, visible, color: cursorColor });
     };
 
-    const handleMouseLeave = () => {
+    const handleMouseMove = (e) => {
+        if (cursorMode === 'always') {
+            sendCursor(e, true);
+        } else if (cursorMode === 'click' && isMouseDown) {
+            sendCursor(e, true);
+        }
+    };
+
+    const handleMouseDown = (e) => {
+        setIsMouseDown(true);
+        if (cursorMode === 'click') {
+            sendCursor(e, true);
+        }
+    };
+
+    const handleMouseUp = (e) => {
+        setIsMouseDown(false);
+        if (cursorMode === 'click') {
+            sendCursor(e, false);
+        }
+    };
+
+    const handleMouseLeave = (e) => {
         if (isHost) return;
-        // Optional: send cursor hidden
+        if (connRef.current) {
+            connRef.current.send({ type: 'cursor', visible: false });
+        }
     };
 
     const copyUrl = () => {
@@ -325,14 +350,13 @@ function Room() {
     return (
         <div className="room">
             <div className="header" style={{ justifyContent: 'center', gap: '1rem', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <span>Room ID: <strong>{roomId}</strong></span>
-                    <button className="icon-btn" onClick={copyUrl} title="Copy Link">
-                        {copied ? <Check size={20} color="green" /> : <Copy size={20} />}
-                    </button>
-                    <button className="icon-btn" onClick={() => setShowLogs(!showLogs)} title="Toggle Logs">
-                        <Terminal size={20} />
-                    </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexDirection: 'column' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ fontSize: '1.2rem' }}>Room ID: <strong>{roomId}</strong></span>
+                        <button className="icon-btn" onClick={copyUrl} title="Copy Link">
+                            {copied ? <Check size={20} color="green" /> : <Copy size={20} />}
+                        </button>
+                    </div>
                 </div>
                 <div className="status-badge" style={{
                     padding: '0.25rem 0.75rem',
@@ -379,9 +403,44 @@ function Room() {
                 </div>
             )}
 
+            {!isHost && isHost !== null && (
+                <div className="guest-controls">
+                    <div className="control-group">
+                        <label>Cursor Mode:</label>
+                        <button
+                            className={`mode-btn ${cursorMode === 'always' ? 'active' : ''}`}
+                            onClick={() => setCursorMode('always')}
+                            title="Always Visible"
+                        >
+                            <Eye size={20} />
+                        </button>
+                        <button
+                            className={`mode-btn ${cursorMode === 'click' ? 'active' : ''}`}
+                            onClick={() => setCursorMode('click')}
+                            title="Click Only"
+                        >
+                            <MousePointer2 size={20} />
+                        </button>
+                    </div>
+                    <div className="control-group">
+                        <label>Color:</label>
+                        {['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7'].map(color => (
+                            <div
+                                key={color}
+                                className={`color-swatch ${cursorColor === color ? 'active' : ''}`}
+                                style={{ backgroundColor: color }}
+                                onClick={() => setCursorColor(color)}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div
                 className="video-container"
                 onMouseMove={handleMouseMove}
+                onMouseDown={handleMouseDown}
+                onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseLeave}
             >
                 {stream ? (
@@ -424,11 +483,29 @@ function Room() {
                         className="remote-cursor"
                         style={{
                             left: `${remoteCursor.x * 100}%`,
-                            top: `${remoteCursor.y * 100}%`
+                            top: `${remoteCursor.y * 100}%`,
+                            backgroundColor: remoteCursor.color,
+                            boxShadow: `0 0 10px ${remoteCursor.color}`
                         }}
                     />
                 )}
             </div>
+
+            <button
+                className="icon-btn"
+                onClick={() => setShowLogs(!showLogs)}
+                title="Toggle Logs"
+                style={{
+                    position: 'fixed',
+                    bottom: '1rem',
+                    left: '1rem',
+                    zIndex: 1001,
+                    backgroundColor: 'var(--card-bg)',
+                    boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+                }}
+            >
+                <Terminal size={20} />
+            </button>
 
             {showLogs && (
                 <div className="debug-logs" style={{
