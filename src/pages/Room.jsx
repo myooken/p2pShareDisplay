@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import Peer from 'peerjs';
-import { Share, Copy, Check, Play, Terminal, Eye, MousePointer2 } from 'lucide-react';
+import { Share, Copy, Check, Play, Terminal, Eye, MousePointer2, Maximize, Minimize, PictureInPicture } from 'lucide-react';
 
 const peerCache = new Map();
 
@@ -27,7 +27,12 @@ function Room() {
     const [cursorColor, setCursorColor] = useState('#ef4444');
     const [isMouseDown, setIsMouseDown] = useState(false);
 
+    // Video Controls State
+    const [isPiP, setIsPiP] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
     const videoRef = useRef(null);
+    const videoContainerRef = useRef(null);
     const connRef = useRef(null);
     const peerRef = useRef(null);
     const streamRef = useRef(null);
@@ -48,6 +53,32 @@ function Room() {
                 .then(() => addLog('Video playing successfully'))
                 .catch(e => addLog(`Error playing video: ${e.message}`, 'error'));
         }
+    }, [stream]);
+
+    // Effect for PiP and Fullscreen listeners
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+
+        const handlePiPEnter = () => setIsPiP(true);
+        const handlePiPLeave = () => setIsPiP(false);
+
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+
+        const videoEl = videoRef.current;
+        if (videoEl) {
+            videoEl.addEventListener('enterpictureinpicture', handlePiPEnter);
+            videoEl.addEventListener('leavepictureinpicture', handlePiPLeave);
+        }
+
+        return () => {
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+            if (videoEl) {
+                videoEl.removeEventListener('enterpictureinpicture', handlePiPEnter);
+                videoEl.removeEventListener('leavepictureinpicture', handlePiPLeave);
+            }
+        };
     }, [stream]);
 
     useEffect(() => {
@@ -347,6 +378,32 @@ function Room() {
         }
     };
 
+    const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+            if (videoContainerRef.current) {
+                videoContainerRef.current.requestFullscreen().catch(err => {
+                    addLog(`Error enabling full-screen: ${err.message}`, 'error');
+                });
+            }
+        } else {
+            document.exitFullscreen();
+        }
+    };
+
+    const togglePiP = async () => {
+        try {
+            if (videoRef.current) {
+                if (document.pictureInPictureElement) {
+                    await document.exitPictureInPicture();
+                } else {
+                    await videoRef.current.requestPictureInPicture();
+                }
+            }
+        } catch (error) {
+            addLog(`Error with PiP: ${error}`, 'error');
+        }
+    };
+
     return (
         <div className="room">
             <div className="header" style={{ justifyContent: 'center', gap: '1rem', flexDirection: 'column' }}>
@@ -438,6 +495,7 @@ function Room() {
 
             <div
                 className="video-container"
+                ref={videoContainerRef}
                 onMouseMove={handleMouseMove}
                 onMouseDown={handleMouseDown}
                 onMouseUp={handleMouseUp}
@@ -452,24 +510,50 @@ function Room() {
                             muted={isHost} // Host mutes their own preview
                             style={{ width: '100%', cursor: 'default' }}
                         />
-                        {!isHost && (
-                            <button
-                                onClick={manualPlay}
-                                style={{
-                                    position: 'absolute',
-                                    bottom: '1rem',
-                                    right: '1rem',
-                                    zIndex: 10,
-                                    padding: '0.5rem',
-                                    backgroundColor: 'rgba(0,0,0,0.5)',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer'
-                                }}
-                                title="Force Play Video"
-                            >
-                                <Play size={16} color="white" />
+                        <div className="video-controls" style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            padding: '1rem',
+                            background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+                            display: 'flex',
+                            justifyContent: 'flex-end',
+                            gap: '1rem',
+                            opacity: 0,
+                            transition: 'opacity 0.3s',
+                        }}>
+                            {!isHost && (
+                                <button onClick={manualPlay} className="icon-btn" title="Force Play Video" style={{ color: 'white' }}>
+                                    <Play size={20} />
+                                </button>
+                            )}
+                            <button onClick={togglePiP} className="icon-btn" title="Picture in Picture" style={{ color: 'white' }}>
+                                <PictureInPicture size={20} />
                             </button>
+                            <button onClick={toggleFullscreen} className="icon-btn" title="Fullscreen" style={{ color: 'white' }}>
+                                {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+                            </button>
+                        </div>
+                        {isPiP && (
+                            <div style={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                color: 'white',
+                                padding: '1rem 2rem',
+                                borderRadius: '8px',
+                                textAlign: 'center',
+                                pointerEvents: 'none',
+                                zIndex: 50
+                            }}>
+                                <p style={{ margin: 0, fontWeight: 'bold' }}>Playing in Picture-in-Picture</p>
+                                <p style={{ margin: '0.5rem 0 0', fontSize: '0.9rem', color: '#fbbf24' }}>
+                                    ⚠️ Remote cursor is NOT visible in PiP mode.
+                                </p>
+                            </div>
                         )}
                     </>
                 ) : (
