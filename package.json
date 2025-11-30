@@ -2,6 +2,7 @@
   "name": "p2psharedisp",
   "private": true,
   "version": "0.0.0",
+  "homepage": "https://<USERNAME>.github.io/<REPO-NAME>",
   "type": "module",
   "scripts": {
     "dev": "vite --host",
