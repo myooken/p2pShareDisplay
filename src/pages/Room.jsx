@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import Peer from 'peerjs';
-import { Share, Copy, Check, Play, Terminal, Eye, MousePointer2, Maximize, Minimize, PictureInPicture } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { Share, Copy, Check, Play, Terminal, Eye, MousePointer2, Maximize, Minimize, PictureInPicture, QrCode } from 'lucide-react';
 
 const peerCache = new Map();
 
@@ -15,6 +16,7 @@ function Room() {
     const [copied, setCopied] = useState(false);
     const [logs, setLogs] = useState([]);
     const [showLogs, setShowLogs] = useState(false);
+    const [showQRCode, setShowQRCode] = useState(false);
 
     // Auth state
     const [password, setPassword] = useState(location.state?.password || '');
@@ -358,13 +360,17 @@ function Room() {
         }
     };
 
-    const copyUrl = () => {
+    const getRoomUrl = () => {
         let hostname = window.location.hostname;
-        if ((hostname === 'localhost' || hostname === '127.0.0.1') && typeof __LOCAL_IP__ !== 'undefined') {
+        if ((hostname === 'localhost' || hostname === '127.0.1.1') && typeof __LOCAL_IP__ !== 'undefined') {
             hostname = __LOCAL_IP__;
         }
         const port = window.location.port ? `:${window.location.port}` : '';
-        const url = `${window.location.protocol}//${hostname}${port}${window.location.pathname}#/room/${roomId}`;
+        return `${window.location.protocol}//${hostname}${port}${window.location.pathname}#/room/${roomId}`;
+    };
+
+    const copyUrl = () => {
+        const url = getRoomUrl();
         navigator.clipboard.writeText(url);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
@@ -413,6 +419,9 @@ function Room() {
                         <button className="icon-btn" onClick={copyUrl} title="Copy Link">
                             {copied ? <Check size={20} color="green" /> : <Copy size={20} />}
                         </button>
+                        <button className="icon-btn" onClick={() => setShowQRCode(true)} title="Show QR Code">
+                            <QrCode size={20} />
+                        </button>
                     </div>
                 </div>
                 <div className="status-badge" style={{
@@ -442,6 +451,25 @@ function Room() {
                             style={{ width: '100%', padding: '0.5rem', marginBottom: '1rem' }}
                         />
                         <button onClick={handleAuthSubmit} style={{ width: '100%' }}>Join</button>
+                    </div>
+                </div>
+            )}
+
+            {showQRCode && (
+                <div className="modal-overlay" onClick={() => setShowQRCode(false)} style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundColor: 'rgba(0,0,0,0.7)', zIndex: 2000,
+                    display: 'flex', justifyContent: 'center', alignItems: 'center'
+                }}>
+                    <div className="card" onClick={e => e.stopPropagation()} style={{ minWidth: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                        <h3>Scan to Join</h3>
+                        <div style={{ background: 'white', padding: '1rem', borderRadius: '8px' }}>
+                            <QRCodeSVG value={getRoomUrl()} size={200} />
+                        </div>
+                        <p style={{ fontSize: '0.9rem', color: '#888', wordBreak: 'break-all', textAlign: 'center' }}>
+                            {getRoomUrl()}
+                        </p>
+                        <button onClick={() => setShowQRCode(false)} style={{ width: '100%' }}>Close</button>
                     </div>
                 </div>
             )}
