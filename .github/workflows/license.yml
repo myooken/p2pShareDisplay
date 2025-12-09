@@ -10,6 +10,9 @@ on:
       - LICENSE
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   license-check:
     runs-on: ubuntu-latest
