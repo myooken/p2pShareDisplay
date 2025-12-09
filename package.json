@@ -4,6 +4,7 @@
   "version": "0.0.0",
   "homepage": "https://<USERNAME>.github.io/<REPO-NAME>",
   "type": "module",
+  "license": "MIT",
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
