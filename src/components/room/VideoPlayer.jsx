@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import useVideoControls from '../../hooks/useVideoControls';
 import VideoControls from './VideoControls';
 import PiPBanner from './PiPBanner';
@@ -17,6 +17,11 @@ function VideoPlayer({
     stream,
     onLog
   );
+  const [scaleMode, setScaleMode] = useState('contain'); // 'contain' or 'cover'
+
+  const toggleScaleMode = () => {
+    setScaleMode(prev => (prev === 'contain' ? 'cover' : 'contain'));
+  };
 
   return (
     <div
@@ -29,13 +34,26 @@ function VideoPlayer({
     >
       {stream ? (
         <>
-          <video ref={videoRef} autoPlay playsInline muted={isHost} style={{ width: '100%', cursor: 'default' }} />
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted={isHost}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: scaleMode,
+              cursor: 'default',
+            }}
+          />
           <VideoControls
             isHost={isHost}
             isFullscreen={isFullscreen}
             toggleFullscreen={toggleFullscreen}
             togglePiP={togglePiP}
             manualPlay={manualPlay}
+            scaleMode={scaleMode}
+            toggleScaleMode={toggleScaleMode}
           />
           {isPiP && <PiPBanner />}
         </>

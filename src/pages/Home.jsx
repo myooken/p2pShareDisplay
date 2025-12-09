@@ -36,7 +36,6 @@ function Home() {
                             placeholder="Enter password"
                             value={createPassword}
                             onChange={(e) => setCreatePassword(e.target.value)}
-                            style={{ width: '100%', boxSizing: 'border-box', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
                         />
                     </div>
                     <button onClick={handleCreateRoom}>Create Room</button>
@@ -52,14 +51,12 @@ function Home() {
                             value={joinRoomId}
                             onChange={(e) => setJoinRoomId(e.target.value)}
                             required
-                            style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
                         />
                         <input
                             type="password"
                             placeholder="Enter Room Password"
                             value={joinPassword}
                             onChange={(e) => setJoinPassword(e.target.value)}
-                            style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
                         />
                         <button type="submit">Join Room</button>
                     </form>

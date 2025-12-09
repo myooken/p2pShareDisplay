@@ -3,7 +3,7 @@ import { Copy, Check, QrCode } from 'lucide-react';
 
 function RoomHeader({ roomId, status, onCopy, copied, onShowQRCode }) {
   return (
-    <div className="header" style={{ justifyContent: 'center', gap: '1rem', flexDirection: 'column' }}>
+    <div className="header" style={{ justifyContent: 'center', gap: '1rem', flexDirection: 'column', padding: '0 1rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <span style={{ fontSize: '1.2rem' }}>

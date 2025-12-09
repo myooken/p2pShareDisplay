@@ -26,6 +26,16 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  height: -webkit-fill-available;
+}
+
 .dark {
   --bg-color: #0f172a;
   /* Slate 900 */
@@ -49,6 +59,7 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--bg-color);
   color: var(--text-color);
   transition: background-color 0.3s, color 0.3s;
@@ -60,6 +71,12 @@ body {
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+}
+
+@media (max-width: 480px) {
+  #root {
+    padding: 1rem;
+  }
 }
 
 button {
@@ -144,14 +161,16 @@ video {
   margin-top: 1rem;
 }
 
-input[type="text"] {
+input {
   padding: 0.6em 1.2em;
   border-radius: 8px;
   border: 1px solid var(--border-color);
   background-color: var(--secondary-bg);
   color: var(--text-color);
-  font-size: 1em;
-  width: 300px;
+  font-size: 16px;
+  /* Prevent zooming on iOS */
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header {
@@ -230,4 +249,35 @@ input[type="text"] {
 .color-swatch.active {
   border-color: var(--text-color);
   transform: scale(1.1);
+}
+
+@media (max-width: 480px) {
+  button {
+    min-height: 44px;
+    /* Touch target size */
+  }
+
+  .guest-controls {
+    flex-direction: column;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .control-group {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .video-container {
+    margin: 1rem auto;
+  }
+
+  /* Ensure video controls are easier to hit */
+  .video-controls .icon-btn {
+    padding: 0.75rem;
+    width: 44px;
+    height: 44px;
+    background: rgba(0, 0, 0, 0.3);
+    /* slight background for visibility */
+  }
 }

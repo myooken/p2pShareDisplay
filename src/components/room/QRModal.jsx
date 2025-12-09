@@ -24,7 +24,7 @@ function QRModal({ open, roomUrl, onClose }) {
       <div
         className="card"
         onClick={e => e.stopPropagation()}
-        style={{ minWidth: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}
+        style={{ width: '90%', maxWidth: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}
       >
         <h3>Scan to Join</h3>
         <div style={{ background: 'white', padding: '1rem', borderRadius: '8px' }}>

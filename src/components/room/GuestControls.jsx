@@ -5,7 +5,7 @@ const cursorColors = ['#ef4444', '#3b82f6', '#22c55e', '#eab308', '#a855f7'];
 
 function GuestControls({ cursorMode, setCursorMode, cursorColor, setCursorColor }) {
   return (
-    <div className="guest-controls">
+    <div className="guest-controls" style={{ flexWrap: 'wrap' }}>
       <div className="control-group">
         <label>Cursor Mode:</label>
         <button

@@ -19,7 +19,7 @@ function AuthModal({ open, authInput, onChange, onSubmit }) {
         alignItems: 'center',
       }}
     >
-      <div className="card" style={{ minWidth: '300px' }}>
+      <div className="card" style={{ width: '90%', maxWidth: '400px' }}>
         <h3>Password Required</h3>
         <p>This room is protected.</p>
         <input
