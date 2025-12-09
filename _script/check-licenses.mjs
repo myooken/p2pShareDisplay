@@ -8,7 +8,7 @@ const pkgJsonPath = "package.json";
 const pkg = JSON.parse(fs.readFileSync(pkgJsonPath, "utf8"));
 const projectLicense = pkg.license ?? "(not set)";
 
-// ここを変えれば将来ライセンス変えるときも制御できる
+// 将来ライセンス変えたくなったらここだけ書き換えればいい
 const expectedProjectLicense = "MIT";
 
 if (projectLicense !== expectedProjectLicense) {
@@ -17,6 +17,11 @@ if (projectLicense !== expectedProjectLicense) {
     );
     process.exit(1);
 }
+
+// 自分自身の package 名+version（license-checker のキーと合わせる）
+const projectName = pkg.name;
+const projectVersion = pkg.version;
+const projectId = `${projectName}@${projectVersion}`;
 
 // 2. 依存ライセンス一覧の読み込み
 const text = fs.readFileSync(licensesJsonPath, "utf8");
@@ -29,6 +34,9 @@ const allowExact = new Set([
     "BSD-2-Clause",
     "BSD-3-Clause",
     "Apache-2.0",
+    // ↓必要に応じて追加
+    "Python-2.0",
+    "CC-BY-4.0",
 ]);
 
 const denyPatterns = [
@@ -47,6 +55,11 @@ const denyExact = new Set([
 const badDeps = [];
 
 for (const [pkgName, info] of Object.entries(data)) {
+    // 👇 自分自身（ルートプロジェクト）はここで除外
+    if (pkgName === projectId) {
+        continue;
+    }
+
     const lic = info.licenses || "UNKNOWN";
 
     // 明示的に許可されているなら OK
@@ -64,17 +77,21 @@ for (const [pkgName, info] of Object.entries(data)) {
         continue;
     }
 
-    // どちらでもないものは警告として扱う（ここは好みで allow に増やしていけばいい）
-    console.warn(`[WARN] 許可/禁止のどちらにも含まれていないパッケージ："${lic}" ライセンス名： ${pkgName}`);
+    // どちらでもないものは警告として扱う
+    console.warn(
+        `[WARN] 許可/禁止のどちらにも含まれていないパッケージ："${lic}" ライセンス名： ${pkgName}`
+    );
 }
 
 // NG があれば CI 失敗にする
 if (badDeps.length > 0) {
-    console.error("\n[ERROR] ポリシーに反するライセンスを持つ依存が発見されました。：");
+    console.error(
+        "\n[ERROR] ポリシーに反するライセンスを持つ依存が発見されました。："
+    );
     for (const d of badDeps) {
         console.error(`  - ${d.pkgName}: ${d.lic} (${d.reason})`);
     }
     process.exit(1);
 }
 
-console.log("[OK] ライセンスチェック終了");
+console.log("[OK] ライセンスチェック終了（MIT 前提で問題なし）");
