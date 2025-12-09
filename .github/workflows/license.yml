@@ -30,7 +30,7 @@ jobs:
         run: npx license-checker --json > licenses.json
 
       - name: Check project & dependency licenses
-        run: node scripts/check-licenses.mjs
+        run: node _script/check-licenses.mjs
 
       - name: Generate THIRD-PARTY-LICENSES.md
         run: |
