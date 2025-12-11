@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { HashRouter as Router, Routes, Route } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { Moon, Sun } from 'lucide-react';
 import thirdPartyLicensesUrl from '../THIRD-PARTY-LICENSES.md?url';
 import Home from './pages/Home';
@@ -7,6 +7,14 @@ import Room from './pages/Room';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
+
+  useEffect(() => {
+    // Ensure hash-based routing URL always contains a hash segment on first load
+    if (!window.location.hash || window.location.hash === '#') {
+      const { origin, pathname, search } = window.location;
+      window.location.replace(`${origin}${pathname}${search}#/`);
+    }
+  }, []);
 
   useEffect(() => {
     // Check system preference on load
@@ -27,7 +35,9 @@ function App() {
     <Router>
       <div className="app-container">
         <header className="header">
-          <h1 style={{ margin: 0 }}>P2P Screen Share</h1>
+          <Link to="/" className="brand-link">
+            <h1 style={{ margin: 0 }}>P2P Screen Share</h1>
+          </Link>
           <button className="icon-btn" onClick={() => setDarkMode(!darkMode)} title="Toggle Dark Mode">
             {darkMode ? <Sun size={24} /> : <Moon size={24} />}
           </button>
