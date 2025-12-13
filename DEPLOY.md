@@ -1,30 +1,25 @@
 # Deploying to GitHub Pages
 
-This project is configured to deploy automatically to GitHub Pages using GitHub Actions.
+p2pShareDisplay は GitHub Actions で GitHub Pages に自動デプロイする構成になっています。
 
-## Prerequisites
+## 1. GitHub Pages の設定
+1. リポジトリの `Settings > Pages` を開き、ソースに **GitHub Actions** を選択する。  
+2. `package.json` の `homepage` を実ドメインに更新する（例: `https://myooken.github.io/p2pShareDisplay`）。  
+3. `vite.config.js` の `base: './'` と `HashRouter` によりリロード時の 404 を回避済み。
 
-1.  **GitHub Repository**: Ensure this project is pushed to a GitHub repository.
-2.  **Package.json**: Update the `homepage` field in `package.json` with your actual GitHub Pages URL.
-    ```json
-    "homepage": "https://<YOUR_USERNAME>.github.io/<YOUR_REPO_NAME>"
-    ```
+## 2. ビルドコマンド
+```bash
+npm run build
+npm run preview   # 必要に応じてローカル確認
+```
 
-## Enabling GitHub Pages
+## 3. デプロイ方法（GitHub Actions）
+1. `main` ブランチに push する。  
+2. `.github/workflows/deploy.yml` が走り、Node 20 で `npm ci` → `npm run build` → Pages へアップロード。  
+3. 完了すると Pages 環境（`github-pages`）に公開される。
 
-1.  Go to your repository on GitHub.
-2.  Navigate to **Settings** > **Pages**.
-3.  Under **Build and deployment**, select **GitHub Actions** as the source.
-    *   *Note: If you don't see "GitHub Actions", you might need to push the `.github/workflows/deploy.yml` file first.*
-
-## Deployment Process
-
-1.  Push your changes to the `main` branch.
-2.  The GitHub Action defined in `.github/workflows/deploy.yml` will automatically run.
-3.  It will build the project and deploy it to the `gh-pages` environment.
-4.  Once finished, your site will be live at the URL specified in your repository settings (usually `https://<username>.github.io/<repo-name>/`).
-
-## Troubleshooting
-
--   **404 Errors**: If you see a 404 error, ensure the `base` in `vite.config.js` is set to `'./'` (which it is) and that your `homepage` in `package.json` is correct.
--   **Routing Issues**: The app uses `HashRouter`, so reloading pages should work fine on GitHub Pages.
+## 4. エラーが出た場合の対処
+- **404 / 空白画面**: `homepage` の URL、`base: './'` 設定、Pages のブランチ/ソース設定を確認。  
+- **ルーティング不整合**: HashRouter を使うため URL に `#/` が含まれているか確認。  
+- **キャッシュ問題**: デプロイ直後はブラウザキャッシュや Pages CDN をクリアする。  
+- **Action 失敗**: `npm ci` 失敗時は lockfile を最新にする、Secrets/Permissions の不足を確認する。
