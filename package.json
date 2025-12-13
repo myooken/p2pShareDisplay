@@ -5,8 +5,12 @@
   "homepage": "https://<USERNAME>.github.io/<REPO-NAME>",
   "type": "module",
   "license": "MIT",
+  "engines": {
+    "node": ">=20.19.0"
+  },
   "scripts": {
     "dev": "vite --host",
+    "dev:test": "node _script/start-test-servers.js",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -31,6 +35,7 @@
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
+    "peer": "^1.0.2",
     "typescript": "^5.9.3",
     "vite": "^7.2.4"
   }

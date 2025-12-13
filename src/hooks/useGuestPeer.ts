@@ -1,6 +1,7 @@
 import { useCallback, type Dispatch, type MutableRefObject, type SetStateAction } from 'react';
 import Peer, { type DataConnection, type MediaConnection } from 'peerjs';
 import type { LogEntry } from './useLogs';
+import { getPeerOptions } from '../utils/peerOptions';
 
 type AuthResponseMessage = { type: 'auth-success' } | { type: 'auth-fail' };
 
@@ -34,7 +35,7 @@ export default function useGuestPeer({
   authRef,
 }: UseGuestPeerParams) {
   return useCallback(() => {
-    const guest = new Peer();
+    const guest = new Peer(undefined, getPeerOptions());
     peerRef.current = guest;
 
     guest.on('open', () => {

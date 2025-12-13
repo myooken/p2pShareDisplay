@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test';
+import { injectPeerConfig } from './utils';
 
 test('create room with password and guest join', async ({ browser }) => {
     // --- Host Context ---
     const hostContext = await browser.newContext();
+    await injectPeerConfig(hostContext);
     const hostPage = await hostContext.newPage();
 
     // Go to home
@@ -27,6 +29,7 @@ test('create room with password and guest join', async ({ browser }) => {
 
     // --- Guest Context ---
     const guestContext = await browser.newContext();
+    await injectPeerConfig(guestContext);
     const guestPage = await guestContext.newPage();
 
     // Go to home
@@ -53,6 +56,7 @@ test('create room with password and guest join', async ({ browser }) => {
 test('guest join with wrong password fails', async ({ browser }) => {
     // --- Host Context ---
     const hostContext = await browser.newContext();
+    await injectPeerConfig(hostContext);
     const hostPage = await hostContext.newPage();
     await hostPage.goto('/');
     await hostPage.fill('input[placeholder="Enter password"]', 'secret123');
@@ -62,6 +66,7 @@ test('guest join with wrong password fails', async ({ browser }) => {
 
     // --- Guest Context ---
     const guestContext = await browser.newContext();
+    await injectPeerConfig(guestContext);
     const guestPage = await guestContext.newPage();
     await guestPage.goto('/');
 

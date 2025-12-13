@@ -1,6 +1,7 @@
 import { useEffect, type MutableRefObject } from 'react';
 import Peer, { type DataConnection } from 'peerjs';
 import type { LogEntry } from './useLogs';
+import { getPeerOptions } from '../utils/peerOptions';
 
 type TimedPeer = Peer & { _cleanupTimer?: ReturnType<typeof setTimeout> | null };
 type CursorState = { x: number; y: number; visible: boolean; color: string };
@@ -45,7 +46,7 @@ export default function usePeerLifecycle({
       }
     } else {
       addLog(`Initializing new Peer with ID: ${roomId}`);
-      peer = new Peer(roomId, { debug: 2 }) as TimedPeer;
+      peer = new Peer(roomId, getPeerOptions()) as TimedPeer;
       peerCache.set(roomId, peer);
     }
 

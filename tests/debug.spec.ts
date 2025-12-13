@@ -1,4 +1,9 @@
 import { test, expect } from '@playwright/test';
+import { injectPeerConfig } from './utils';
+
+test.beforeEach(async ({ page }) => {
+    await injectPeerConfig(page);
+});
 
 test('debug ui check', async ({ page }) => {
     // Go to home page

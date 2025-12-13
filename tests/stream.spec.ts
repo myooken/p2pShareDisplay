@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { injectPeerConfig } from './utils';
 
 test.use({
     launchOptions: {
@@ -11,7 +12,9 @@ test.use({
 
 test('screen share stream flow', async ({ browser }) => {
     const hostContext = await browser.newContext();
+    await injectPeerConfig(hostContext);
     const guestContext = await browser.newContext();
+    await injectPeerConfig(guestContext);
     const hostPage = await hostContext.newPage();
     const guestPage = await guestContext.newPage();
 
