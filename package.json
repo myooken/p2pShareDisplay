@@ -13,10 +13,13 @@
     "dev:test": "node _script/start-test-servers.js",
     "build": "vite build",
     "lint": "eslint .",
+    "format": "eslint . --fix",
     "preview": "vite preview",
-    "test": "playwright test"
+    "test": "playwright test",
+    "licenses": "npx license-checker --production --relativeLicensePath --markdown > THIRD-PARTY-LICENSES.md & npx license-checker --json > licenses.json"
   },
   "dependencies": {
+    "license-checker": "^25.0.1",
     "lucide-react": "^0.555.0",
     "peerjs": "^1.5.5",
     "qrcode.react": "^4.2.0",

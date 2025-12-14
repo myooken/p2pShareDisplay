@@ -1,5 +1,10 @@
 # p2pShareDisplay
 
+url  
+https://myooken.github.io/p2pShareDisplay
+
+![p2p screen share](docs\screenshot.png)
+
 ## 1. プロジェクト概要（What）
 このアプリは、ブラウザだけで手軽に画面共有を行うための実験的 Web アプリケーションです。PeerJS を使った P2P 通信で、ホストの画面をゲストへリアルタイム配信します。
 
