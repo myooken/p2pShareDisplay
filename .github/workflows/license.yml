@@ -1,4 +1,4 @@
-name: License Check & Update
+name: License Audit
 
 on:
   push:
@@ -8,32 +8,53 @@ on:
       - pnpm-lock.yaml
       - yarn.lock
       - LICENSE
+      - docs/licenses/**
+      - scripts/**
+      - .github/workflows/license.yml
+  pull_request:
+    paths:
+      - package.json
+      - package-lock.json
+      - pnpm-lock.yaml
+      - yarn.lock
+      - LICENSE
+      - docs/licenses/**
+      - scripts/**
+      - .github/workflows/license.yml
   workflow_dispatch:
+    inputs:
+      post_comment:
+        description: "Post PR comment on failure (true/false)"
+        required: false
+        default: "false"
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
-  license-check:
+  license:
     runs-on: ubuntu-latest
+    env:
+      NODE_VERSION: "20"
+      POST_PR_COMMENT: ${{ github.event.inputs.post_comment || vars.LICENSE_PR_COMMENT || 'false' }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
         run: npm ci
 
       - name: Generate licenses.json
         run: npx license-checker --json > licenses.json
-
-      - name: Check project & dependency licenses
-        run: node _script/check-licenses.mjs
 
       - name: Generate THIRD-PARTY-LICENSES.md
         run: |
@@ -43,11 +64,72 @@ jobs:
             --markdown \
             > THIRD-PARTY-LICENSES.md
 
+      - name: Collect NOTICE files
+        run: node scripts/collect-notices.mjs
+
+      - name: Check license policy
+        run: node scripts/check-licenses.mjs
+
+      - name: Build license page
+        run: node scripts/build-license-page.mjs
+
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-artifacts
+          path: |
+            reports/**
+            licenses.json
+            THIRD-PARTY-LICENSES.md
+            docs/licenses/index.md
+            docs/licenses/THIRD-PARTY-LICENSES.md
+            docs/licenses/licenses.json
+            docs/licenses/texts/**
+            docs/licenses/notices/**
+            docs/licenses/ATTRIBUTION.md
+
+      - name: Comment on PR (failure)
+        if: >
+          failure() &&
+          github.event_name == 'pull_request' &&
+          env.POST_PR_COMMENT == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let body = '### License check failed\n';
+            try {
+              const report = JSON.parse(fs.readFileSync('reports/license-check-report.json', 'utf8'));
+              if (report.errors?.length) {
+                body += `- Errors (${report.errors.length}):\n`;
+                body += report.errors.map(e => `  - ${e}`).join('\n') + '\n';
+              }
+              if (report.missingLicenseTexts?.length) {
+                body += `- Missing license texts: ${report.missingLicenseTexts.join(', ')}\n`;
+              }
+              if (report.missingNotices?.length) {
+                body += `- Missing NOTICE files: ${report.missingNotices.length}\n`;
+              }
+            } catch (err) {
+              body += `Could not read report: ${err.message}\n`;
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+
       - name: Commit changes
+        if: github.event_name == 'push'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git add THIRD-PARTY-LICENSES.md licenses.json
-          git commit -m "chore: update third-party licenses" || echo "No changes"
-          git push
+          git add licenses.json THIRD-PARTY-LICENSES.md docs/licenses/index.md docs/licenses/THIRD-PARTY-LICENSES.md docs/licenses/licenses.json docs/licenses/notices docs/licenses/texts docs/licenses/ATTRIBUTION.md
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update license artifacts"
+            git push
+          fi

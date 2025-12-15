@@ -16,7 +16,11 @@
     "format": "eslint . --fix",
     "preview": "vite preview",
     "test": "playwright test",
-    "licenses": "npx license-checker --production --relativeLicensePath --markdown > THIRD-PARTY-LICENSES.md & npx license-checker --json > licenses.json"
+    "license:scan": "npx license-checker --json > licenses.json && npx license-checker --production --relativeLicensePath --markdown > THIRD-PARTY-LICENSES.md",
+    "license:collect-notices": "node scripts/collect-notices.mjs",
+    "license:check": "node scripts/check-licenses.mjs",
+    "license:page": "node scripts/build-license-page.mjs",
+    "license:all": "npm run license:scan && npm run license:collect-notices && npm run license:check && npm run license:page"
   },
   "dependencies": {
     "license-checker": "^25.0.1",
