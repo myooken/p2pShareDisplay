@@ -6,6 +6,11 @@
  * - Evaluates dependency licenses from licenses.json (license-checker output)
  * - Verifies required license texts / NOTICE / attribution files exist under docs/licenses
  * - Emits GitHub Actions annotations and a report for artifact upload
+ *
+ * 
+ * - MIT 前提のポリシーで package.json と依存ライセンスを検証する
+ * - SPDX 式を分解し、docs/licenses/texts に本文があるかを必須チェック
+ * - Apache の NOTICE 有無や CC-BY 系の Attribution 必須もここで落とす
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -19,7 +24,7 @@ const REPORTS_DIR = "reports";
 
 const EXPECTED_PROJECT_LICENSE = "MIT";
 
-// Allow list is strict; extend when a newly added dependency uses a different allowed license.
+// 許可リストは厳格運用。新しいライセンスが入ったらここを明示的に拡張する。
 const ALLOWED_LICENSES = new Set([
     "MIT",
     "ISC",
@@ -40,12 +45,15 @@ const warnings = [];
 const missingLicenseTexts = new Set();
 const missingNotices = [];
 
+// JSON 読み込みユーティリティ（素直に同期で読む）
 const readJSON = (file) => JSON.parse(fs.readFileSync(file, "utf8"));
 
+// スラッシュを含むパッケージ名をファイル名に安全に落とす
 const safeNoticeName = (pkgId) => `${pkgId.replace(/\//g, "__")}.NOTICE.txt`;
 
-const ensureReportsDir = () => fs.mkdirSync(REPORTS_DIR, { recursive: true });
+const ensureReportsDir = () => fs.mkdirSync(REPORTS_DIR, { recursive: true }); // CI で artifacts に残す reports 用
 
+// SPDX 風の文字列をトークン化（AND/OR/() を除外し、個別ライセンス名を抽出）
 const normalizeLicensesField = (licensesField) => {
     const items = Array.isArray(licensesField) ? licensesField : [licensesField];
     const tokens = [];
@@ -73,6 +81,7 @@ const annotateWarning = (message) => {
     warnings.push(message);
 };
 
+// 必須ファイルの存在チェック
 const requireFile = (filePath, description) => {
     if (!fs.existsSync(filePath)) {
         annotateError(`Missing ${description}: ${filePath}`);
@@ -85,9 +94,9 @@ const writeStepSummary = (content) => {
 };
 
 // 1) Project license check
-const pkg = readJSON(PKG_JSON);
-const projectLicense = pkg.license ?? "(not set)";
-const projectId = `${pkg.name}@${pkg.version}`;
+const pkg = readJSON(PKG_JSON); // package.json を読む
+const projectLicense = pkg.license ?? "(not set)"; // プロジェクト自身の license
+const projectId = `${pkg.name}@${pkg.version}`; // license-checker のキー形式に合わせる
 
 if (projectLicense !== EXPECTED_PROJECT_LICENSE) {
     annotateError(
@@ -100,7 +109,7 @@ if (!fs.existsSync(LICENSES_JSON)) {
     annotateError(`licenses.json not found. Run "npx license-checker --json > ${LICENSES_JSON}".`);
 }
 
-let licensesData = {};
+let licensesData = {}; // license-checker --json の内容
 try {
     licensesData = readJSON(LICENSES_JSON);
 } catch (err) {
@@ -113,9 +122,10 @@ let ccByDetected = false;
 let scannedCount = 0;
 
 for (const [pkgId, info] of dependencyEntries) {
-    if (pkgId === projectId) continue; // Skip this project itself
+    if (pkgId === projectId) continue; // 自分自身は除外
     scannedCount += 1;
 
+    // SPDX 式や配列を個別ライセンス ID の配列に整形
     const licenseIds = normalizeLicensesField(info.licenses);
     if (licenseIds.length === 0) {
         annotateError(`No license detected for ${pkgId}.`);
@@ -141,7 +151,7 @@ for (const [pkgId, info] of dependencyEntries) {
             );
         }
 
-        const textPath = path.join(LICENSE_TEXTS_DIR, `${licenseId}.txt`);
+        const textPath = path.join(LICENSE_TEXTS_DIR, `${licenseId}.txt`); // 必須ライセンス本文
         if (!fs.existsSync(textPath)) {
             missingLicenseTexts.add(licenseId);
         }
@@ -151,6 +161,7 @@ for (const [pkgId, info] of dependencyEntries) {
         }
     }
 
+    // Apache-2.0 で NOTICE がある場合は docs/licenses/notices にコピーされているか
     if (licenseIds.includes("Apache-2.0") && info.noticeFile) {
         const noticeTarget = path.join(NOTICES_DIR, safeNoticeName(pkgId));
         if (!fs.existsSync(noticeTarget)) {
@@ -180,6 +191,7 @@ for (const notice of missingNotices) {
 }
 
 if (ccByDetected) {
+    // CC-BY 系がある場合は Attribution を要求
     requireFile(ATTRIBUTION_PATH, "CC-BY attribution file");
 }
 
@@ -202,6 +214,7 @@ const report = {
     errors,
 };
 
+// CI 用に JSON レポートを残す
 fs.writeFileSync(path.join(REPORTS_DIR, "license-check-report.json"), JSON.stringify(report, null, 2));
 
 const summaryLines = [

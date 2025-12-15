@@ -4,6 +4,10 @@
  * - Embeds project license
  * - Lists available license texts and NOTICE files
  * - Copies THIRD-PARTY-LICENSES.md into docs/licenses for web access
+ *
+ * 
+ * - docs/licenses を走査して index.md を自動生成（追加されたテキスト/NOTICE が自動で反映される）
+ * - ルートの THIRD-PARTY-LICENSES.md / licenses.json も docs 配下にコピーして Pages で閲覧可能にする
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -22,28 +26,32 @@ const PROJECT_LICENSE_PATH = "LICENSE";
 fs.mkdirSync(LICENSE_TEXTS_DIR, { recursive: true });
 fs.mkdirSync(NOTICES_DIR, { recursive: true });
 
+// 存在する場合のみ中身を返す（末尾改行は削る）
 const readIfExists = (file) => (fs.existsSync(file) ? fs.readFileSync(file, "utf8").trimEnd() : "");
 
-// Copy third-party license list into docs for GitHub Pages access.
+// THIRD-PARTY-LICENSES.md を docs にコピー（Pages から閲覧できるように）
 if (fs.existsSync(ROOT_THIRD_PARTY)) {
     fs.copyFileSync(ROOT_THIRD_PARTY, DOCS_THIRD_PARTY);
 }
 
+// licenses.json もコピーして監査用の生データを公開
 if (fs.existsSync(ROOT_LICENSES_JSON)) {
     fs.copyFileSync(ROOT_LICENSES_JSON, DOCS_LICENSES_JSON);
 }
 
+// docs/licenses/texts 以下のライセンス本文を列挙
 const licenseTextFiles = fs
     .readdirSync(LICENSE_TEXTS_DIR)
     .filter((f) => f.toLowerCase().endsWith(".txt"))
     .sort();
 
+// NOTICE 一覧も列挙
 const noticeFiles = fs
     .readdirSync(NOTICES_DIR)
     .filter((f) => f.toLowerCase().endsWith(".txt"))
     .sort();
 
-const projectLicenseText = readIfExists(PROJECT_LICENSE_PATH);
+const projectLicenseText = readIfExists(PROJECT_LICENSE_PATH); // 自身の LICENSE を埋め込むために読む
 
 const lines = [];
 lines.push("# Licenses");
