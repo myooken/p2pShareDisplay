@@ -39,7 +39,6 @@
 [os-homedir@1.0.2](https://github.com/sindresorhus/os-homedir) - MIT
 [os-tmpdir@1.0.2](https://github.com/sindresorhus/os-tmpdir) - MIT
 [osenv@0.1.5](https://github.com/npm/osenv) - ISC
-[p2psharedisp@0.0.0](undefined) - UNLICENSED
 [path-is-absolute@1.0.1](https://github.com/sindresorhus/path-is-absolute) - MIT
 [path-parse@1.0.7](https://github.com/jbgutierrez/path-parse) - MIT
 [peerjs-js-binarypack@2.1.0](https://github.com/peers/js-binarypack) - MIT

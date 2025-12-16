@@ -256,7 +256,21 @@ input {
   margin: 0 auto 2rem;
 }
 
-.license-content {
+.license-section {
+  margin-bottom: 1.5rem;
+}
+
+.license-entry {
+  margin-bottom: 1rem;
+}
+
+.license-entry__title {
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+}
+
+.license-block {
+  margin: 0;
   background: var(--secondary-bg);
   border: 1px solid var(--border-color);
   border-radius: 12px;
@@ -265,15 +279,8 @@ input {
   word-break: break-word;
   max-height: 70vh;
   overflow: auto;
-  margin-top: 0.75rem;
-}
-
-.license-frame {
-  width: 100%;
-  height: clamp(360px, 70vh, 1080px);
-  border: 1px solid var(--border-color);
-  border-radius: 12px;
-  background: var(--secondary-bg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.95rem;
 }
 
 .guest-controls {
