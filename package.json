@@ -15,7 +15,9 @@
     "lint": "eslint .",
     "format": "eslint . --fix",
     "preview": "vite preview",
-    "test": "playwright test"
+    "test": "playwright test",
+    "license:generate": "node _script/generate-license-output.mjs",
+    "license:generate:strict": "node _script/generate-license-output.mjs --fail-on-missing"
   },
   "dependencies": {
     "lucide-react": "^0.555.0",
@@ -27,6 +29,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@myooken/license-output": "^0.1.1",
     "@playwright/test": "^1.57.0",
     "@types/node": "^25.0.0",
     "@types/react": "^19.2.5",
