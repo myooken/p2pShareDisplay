@@ -16,11 +16,11 @@
     "format": "eslint . --fix",
     "preview": "vite preview",
     "test": "playwright test",
-    "license:generate": "node _script/generate-license-output.mjs",
-    "license:generate:strict": "node _script/generate-license-output.mjs --fail-on-missing"
+    "license": "npx third-party-license --license public/THIRD-PARTY-LICENSE.md && npx third-party-license --review THIRD-PARTY-LICENSE-REVIEW.md"
   },
   "dependencies": {
     "lucide-react": "^0.555.0",
+    "node-module-license-output": "^1.0.0",
     "peerjs": "^1.5.5",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.0",
@@ -29,7 +29,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
-    "@myooken/license-output": "^0.3.0",
     "@playwright/test": "^1.57.0",
     "@types/node": "^25.0.0",
     "@types/react": "^19.2.5",
